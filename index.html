@@ -1,0 +1,96 @@
+<html>
+  <head>
+  </head>
+  <body>
+    <canvas id="game" height="500" width="500"></canvas>
+    <div id="info"></div>
+    <style>
+      label { display: block; }
+    </style>
+    <script>
+  var ctx = document.getElementById("game").getContext("2d");
+ctx.fillStyle = "#0A0";
+ctx.fillRect(0,400,500,100);
+
+_v = {};
+function set_v(name,value,n) {
+  _v[n || name] = value;
+  var e = document.createElement('div');
+  e.innerHTML = "<b>"+name+":</b> "+value;
+  document.getElementById("info").appendChild(e);
+}
+set_v('gravity',.001,'g');
+set_v('power',1);
+
+function Tank(x,y,color) {
+  var w = 30, h = 20;
+  var out = {
+    x:x,
+    y:y,
+    x0: x-w/2,
+    x1: x+w/2,
+    y0: y-h/2,
+    y1: y+h/2,
+    ctx: ctx,
+    collide: function(_x,_y) {
+      if (_x > this.x0 && _x < this.x1 && _y > this.y0 && _y < this.y1) {
+	return true;
+      }
+    },
+    draw: function() {
+      this.ctx.fillStyle=color;
+      this.ctx.fillRect(this.x0,this.y0,w,h);
+    }
+  }
+  out.draw();
+  return out;
+}
+
+var player = new Tank(50,400,"#00B");
+var opponent = new Tank(450,400,"#AAA");
+
+var draw = {
+  ctx: ctx,
+  bullet: function(x,y,color) {
+    if (!!color) { ctx.fillStyle=color; }
+    this.ctx.fillRect(x,y,1,1);
+  },
+  explode: function(x,y,r) {
+    if (!r) { r = 20 }
+    ctx.fillStyle="rgba(255,75,0,0.5)";
+    ctx.beginPath();
+    console.log(x-r);
+    console.log(y-r);
+    ctx.arc(x,y,r,0,Math.PI*2,true);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+function line_v(m) {
+  // using the initial slope, find the initial velocity to pass into line_x, line_y
+  var angle = Math.atan(m);
+  return {
+    x: Math.cos(angle)*_v.power,
+    y: Math.sin(angle)*_v.power
+  }
+}
+function line_y(t,v0) { return v0.y*t-_v.g*t*t; }
+function line_x(t,v0) { return v0.x*t; }
+function fire(tank,m) {
+  // Draw points at [x,y]
+  ctx.fillStyle="#f00";
+  var v0 = line_v(m);
+  for (var t=0;t<2000;t++) {
+    x = tank.x + line_x(t,v0);
+    y = tank.y - line_y(t,v0);
+    draw.bullet(x,y);
+    if (opponent.collide(x,y)) {
+      draw.explode(x,y);
+      break;
+    }
+  }
+}
+fire({x:50,y:400},1)
+    </script>
+  </body>
+</html>
